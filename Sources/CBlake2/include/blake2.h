@@ -150,6 +150,7 @@ extern "C" {
 
   int blake2b_init( blake2b_state *S, size_t outlen );
   int blake2b_init_key( blake2b_state *S, size_t outlen, const void *key, size_t keylen );
+  int blake2b_InitPersonal(blake2b_state *S, size_t outlen, const void *personal, size_t personal_len);
   int blake2b_init_param( blake2b_state *S, const blake2b_param *P );
   int blake2b_update( blake2b_state *S, const void *in, size_t inlen );
   int blake2b_final( blake2b_state *S, void *out, size_t outlen );
@@ -178,7 +179,8 @@ extern "C" {
   /* Simple API */
   int blake2s( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen );
   int blake2b( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen );
-
+  int blake2b_personal( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen,
+                       const void *personal, size_t personal_len );
   int blake2sp( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen );
   int blake2bp( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen );
 

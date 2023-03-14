@@ -37,8 +37,10 @@ struct Blake2b: Blake2Impl {
     static func hash(
         out: UnsafeMutableBufferPointer<UInt8>,
         bytes: UnsafeBufferPointer<UInt8>,
-        key: UnsafeBufferPointer<UInt8>?
+        key: UnsafeBufferPointer<UInt8>?,
+        persional: UnsafeBufferPointer<UInt8>? = nil
     ) -> Bool {
-        blake2b(out.baseAddress, out.count, bytes.baseAddress, bytes.count, key?.baseAddress, key?.count ?? 0) == 0
+        blake2b_personal(out.baseAddress, out.count, bytes.baseAddress, bytes.count, key?.baseAddress, key?.count ?? 0, persional?.baseAddress, persional?.count ?? 0) == 0
     }
+    
 }

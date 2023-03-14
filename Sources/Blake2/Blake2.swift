@@ -14,7 +14,8 @@ protocol Blake2Impl {
     static func hash(
         out: UnsafeMutableBufferPointer<UInt8>,
         bytes: UnsafeBufferPointer<UInt8>,
-        key: UnsafeBufferPointer<UInt8>?
+        key: UnsafeBufferPointer<UInt8>?,
+        persional: UnsafeBufferPointer<UInt8>?
     ) -> Bool
 }
 
@@ -73,55 +74,113 @@ public struct Blake2 {
         return data
     }
     
-    public static func hash(_ type: B2Type, size: Int, data: Data, key: [UInt8]? = nil) throws -> Data {
+    public static func hash(_ type: B2Type, size: Int, data: Data, key: [UInt8]? = nil, persional: Data? = nil) throws -> Data {
         let res: Bool
         var out: Data = Data(repeating: 0, count: size)
         if let key = key {
-            res = out.withUnsafeMutableBytes { out in
-                key.withUnsafeBufferPointer { key in
+            if let persional = persional{
+                res = out.withUnsafeMutableBytes { out in
+                    key.withUnsafeBufferPointer { key in
+                        data.withUnsafeBytes { data in
+                            persional.withUnsafeBytes { persional in
+                                implementation(for: type).hash(
+                                    out: out.bindMemory(to: UInt8.self),
+                                    bytes: data.bindMemory(to: UInt8.self), key: key, persional: persional.bindMemory(to: UInt8.self)
+                                )
+                            }
+                        }
+                    }
+                }
+            }else{
+                res = out.withUnsafeMutableBytes { out in
+                    key.withUnsafeBufferPointer { key in
+                        data.withUnsafeBytes { data in
+                            implementation(for: type).hash(
+                                out: out.bindMemory(to: UInt8.self),
+                                bytes: data.bindMemory(to: UInt8.self), key: key, persional: nil
+                            )
+                        }
+                    }
+                }
+            }
+            
+        } else {
+            if let persional = persional{
+                res = out.withUnsafeMutableBytes { out in
+                    data.withUnsafeBytes { data in
+                        persional.withUnsafeBytes { persional in
+                            implementation(for: type).hash(
+                                out: out.bindMemory(to: UInt8.self),
+                                bytes: data.bindMemory(to: UInt8.self), key: nil, persional: persional.bindMemory(to: UInt8.self)
+                            )
+                        }
+                    }
+                }
+            }else{
+                res = out.withUnsafeMutableBytes { out in
                     data.withUnsafeBytes { data in
                         implementation(for: type).hash(
                             out: out.bindMemory(to: UInt8.self),
-                            bytes: data.bindMemory(to: UInt8.self), key: key
+                            bytes: data.bindMemory(to: UInt8.self), key: nil, persional:nil
                         )
                     }
                 }
             }
-        } else {
-            res = out.withUnsafeMutableBytes { out in
-                data.withUnsafeBytes { data in
-                    implementation(for: type).hash(
-                        out: out.bindMemory(to: UInt8.self),
-                        bytes: data.bindMemory(to: UInt8.self), key: nil
-                    )
-                }
-            }
+            
         }
         guard res else { throw Error.hashingError }
         return out
     }
     
-    public static func hash(_ type: B2Type, size: Int, bytes: [UInt8], key: [UInt8]? = nil) throws -> Data {
+    public static func hash(_ type: B2Type, size: Int, bytes: [UInt8], key: [UInt8]? = nil, persional: Data? = nil) throws -> Data {
         let res: Bool
         var out: Data = Data(repeating: 0, count: size)
         if let key = key {
-            res = out.withUnsafeMutableBytes { out in
-                key.withUnsafeBufferPointer { key in
-                    bytes.withUnsafeBufferPointer { bytes in
-                        implementation(for: type).hash(
-                            out: out.bindMemory(to: UInt8.self),
-                            bytes: bytes, key: key
-                        )
+            if let perisonal = persional{
+                res = out.withUnsafeMutableBytes { out in
+                    key.withUnsafeBufferPointer { key in
+                        bytes.withUnsafeBufferPointer { bytes in
+                            perisonal.withUnsafeBytes({ persional in
+                                implementation(for: type).hash(
+                                    out: out.bindMemory(to: UInt8.self),
+                                    bytes: bytes, key: key, persional: persional.bindMemory(to: UInt8.self)
+                                )
+                            })
+                        }
+                    }
+                }
+            }else{
+                res = out.withUnsafeMutableBytes { out in
+                    key.withUnsafeBufferPointer { key in
+                        bytes.withUnsafeBufferPointer { bytes in
+                            implementation(for: type).hash(
+                                out: out.bindMemory(to: UInt8.self),
+                                bytes: bytes, key: key, persional: nil
+                            )
+                        }
                     }
                 }
             }
         } else {
-            res = out.withUnsafeMutableBytes { out in
-                bytes.withUnsafeBufferPointer { bytes in
-                    implementation(for: type).hash(
-                        out: out.bindMemory(to: UInt8.self),
-                        bytes: bytes, key: nil
-                    )
+            if let persional = persional{
+                res = out.withUnsafeMutableBytes { out in
+                    bytes.withUnsafeBufferPointer { bytes in
+                        persional.withUnsafeBytes { persional in
+                            implementation(for: type).hash(
+                                out: out.bindMemory(to: UInt8.self),
+                                bytes: bytes, key: nil, persional: persional.bindMemory(to: UInt8.self)
+                            )
+                        }
+                    }
+                }
+            } else {
+                res = out.withUnsafeMutableBytes { out in
+                    bytes.withUnsafeBufferPointer { bytes in
+                        implementation(for: type).hash(
+                            out: out.bindMemory(to: UInt8.self),
+                            bytes: bytes, key: nil, persional: nil
+                        )
+                    }
                 }
             }
         }

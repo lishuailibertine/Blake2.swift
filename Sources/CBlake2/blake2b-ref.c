@@ -116,6 +116,27 @@ int blake2b_init( blake2b_state *S, size_t outlen )
   return blake2b_init_param( S, P );
 }
 
+int blake2b_InitPersonal( blake2b_state *S, size_t outlen, const void *personal, size_t personal_len)
+{
+  blake2b_param P[1];
+
+  if ( ( !outlen ) || ( outlen > BLAKE2B_OUTBYTES ) ) return -1;
+  if ( ( !personal ) || ( personal_len != BLAKE2B_PERSONALBYTES ) ) return -1;
+
+  P->digest_length = (uint8_t)outlen;
+  P->key_length    = 0;
+  P->fanout        = 1;
+  P->depth         = 1;
+  store32( &P->leaf_length, 0 );
+  store32( &P->node_offset, 0 );
+  store32( &P->xof_length, 0 );
+  P->node_depth    = 0;
+  P->inner_length  = 0;
+  memset( P->reserved, 0, sizeof( P->reserved ) );
+  memset( P->salt,     0, sizeof( P->salt ) );
+  memcpy( P->personal, personal, BLAKE2B_PERSONALBYTES );
+  return blake2b_init_param( S, P );
+}
 
 int blake2b_init_key( blake2b_state *S, size_t outlen, const void *key, size_t keylen )
 {
@@ -297,6 +318,38 @@ int blake2b( void *out, size_t outlen, const void *in, size_t inlen, const void 
   blake2b_update( S, ( const uint8_t * )in, inlen );
   blake2b_final( S, out, outlen );
   return 0;
+}
+
+int blake2b_personal( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen,
+                     const void *personal, size_t personal_len )
+{
+    blake2b_state S[1];
+
+    /* Verify parameters */
+    if ( NULL == in && inlen > 0 ) return -1;
+
+    if ( NULL == out ) return -1;
+
+    if( NULL == key && keylen > 0 ) return -1;
+
+    if( !outlen || outlen > BLAKE2B_OUTBYTES ) return -1;
+
+    if( keylen > BLAKE2B_KEYBYTES ) return -1;
+
+    if( keylen > 0 )
+    {
+      if( blake2b_init_key( S, outlen, key, keylen ) < 0 ) return -1;
+    }
+    else
+    {
+        if (personal_len > 0){if( blake2b_InitPersonal( S, outlen,personal, personal_len ) < 0 ) return -1;}
+        else{if( blake2b_init( S, outlen ) < 0 ) return -1;}
+    }
+
+    blake2b_update( S, ( const uint8_t * )in, inlen );
+    blake2b_final( S, out, outlen );
+    return 0;
+    
 }
 
 int blake2( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen ) {
